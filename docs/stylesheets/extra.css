@@ -1,0 +1,37 @@
+/* servolab colours: TUM blue, like ServoScope */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #3070b3;
+  --md-primary-fg-color--light: #5e8fc8;
+  --md-primary-fg-color--dark: #245a94;
+  --md-accent-fg-color: #245a94;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #245a94;
+  --md-primary-fg-color--light: #3070b3;
+  --md-primary-fg-color--dark: #1b4675;
+  --md-accent-fg-color: #8fb4e0;
+}
+
+/* Docstrings are plain text (written for help() and ServoScope): keep their
+   line breaks, indentation and aligned columns, like ServoScope does. */
+.sl-docstring {
+  white-space: pre-wrap;
+  font-family: var(--md-code-font-family);
+  font-size: 0.72rem;
+  color: var(--md-default-fg-color--light);
+  line-height: 1.6;
+  margin: 0.4em 0 1.6em;
+  padding: 0.2em 0 0.2em 0.9em;
+  border-left: 2px solid var(--md-default-fg-color--lightest);
+}
+
+/* The register tables are wide: smaller text, register names in one piece */
+.md-typeset table:not([class]) {
+  font-size: 0.68rem;
+}
+.md-typeset table:not([class]) td code,
+.md-typeset table:not([class]) td:nth-child(4) {
+  white-space: nowrap;
+}

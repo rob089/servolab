@@ -1,0 +1,51 @@
+name: publish
+
+# Uploads a new version to PyPI when a tag like v1.0.0 is pushed:
+#     git tag v1.0.0 && git push origin v1.0.0
+# PyPI trusts this workflow ("trusted publishing"), so no password or token is stored here.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          python-version: "3.13"
+      - name: The tag must match __version__
+        run: |
+          version=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/servolab/__init__.py)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "The tag is $GITHUB_REF_NAME, but src/servolab/__init__.py says $version."
+            exit 1
+          fi
+      - name: Test (no hardware needed)
+        run: uv sync --frozen --all-extras && uv run --frozen pytest -q
+      - name: Build wheel and sdist
+        run: uv build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/servolab/
+    permissions:
+      id-token: write     # proves to PyPI that this upload comes from this workflow
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

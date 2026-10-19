@@ -1,0 +1,168 @@
+<!--
+  SO102 - TUM MiMed's 6-DoF version of the SO-101 arm (SO-101 + forearm roll joint).
+
+  Converted once from the Fusion 360 URDF export of 2026-10-03 (names, IDs,
+  actuators added; rounding noise removed). This file is now the original:
+  edit it directly.
+
+  Zero pose (all joints 0 rad): upper arm pointing up, forearm pointing forward
+  (+x), wrist straight, gripper closed. This is the pose in which every servo
+  reads step 2048 (servolab: 0 rad) after m.set_zero().
+
+  Servo IDs (also stored in <custom> at the end, servolab reads them from there)
+  and what a positive angle does, starting from the zero pose and standing
+  behind the robot (directions checked on the real arm, 2026-10-03):
+      1  shoulder_pan    arm swings to the right (clockwise seen from above)
+      2  shoulder_lift   upper arm tips backwards
+      3  elbow_flex      forearm moves up
+      4  forearm_roll    rolls counter-clockwise (looking along the arm)
+      5  wrist_flex      gripper tips down
+      6  wrist_roll      rolls counter-clockwise (looking along the arm)
+      7  gripper         closes (0 = closed, opening is negative)
+
+  Masses (weighed 2026-10-03): each part has one mass="..." (kg) on its collision geom; MuJoCo
+  computes centre of mass and inertia from the mesh (uniform density). All
+  seven servos share one mass in the "servo" default class.
+  The joint settings in the "so102" default class (armature, friction) are
+  estimates for an STS3215 with 1:345 gearbox - tune them against the real arm.
+-->
+<mujoco model="so102">
+  <compiler angle="radian" meshdir="meshes" autolimits="true" inertiagrouprange="3 3"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <default>
+    <!-- STL files are in mm. Inertia is computed from the closed mesh volume. -->
+    <mesh scale="0.001 0.001 0.001" inertia="exact"/>
+    <default class="so102">
+      <joint armature="0.01" frictionloss="0.05" damping="0.05"/>
+      <motor ctrlrange="-1.9 1.9"/>
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      <default class="collision">
+        <!-- arm parts touch the world and objects, not each other -->
+        <geom type="mesh" group="3" contype="2" conaffinity="1"/>
+        <default class="servo">
+          <geom mesh="sts3215" mass="0.065"/>  <!-- one STS3215 incl. horn and screws, weighed -->
+        </default>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <material name="printed" rgba="0.92 0.92 0.9 1"/>
+    <material name="servo" rgba="0.12 0.12 0.13 1"/>
+    <mesh name="sts3215" file="sts3215.stl"/>  <!-- all seven servos use the same mesh -->
+    <mesh name="base" file="base.stl"/>
+    <mesh name="shoulder" file="shoulder.stl"/>
+    <mesh name="upper_arm" file="upper_arm.stl"/>
+    <mesh name="lower_arm" file="lower_arm.stl"/>
+    <mesh name="forearm" file="forearm.stl"/>
+    <mesh name="wrist" file="wrist.stl"/>
+    <mesh name="gripper" file="gripper.stl"/>
+    <mesh name="moving_jaw" file="moving_jaw.stl"/>
+    <mesh name="fixed_jaw" file="fixed_jaw.stl"/>
+  </asset>
+
+  <worldbody>
+    <body name="base" childclass="so102" quat="0.7071068 0 0 0.7071068">
+      <geom class="visual" mesh="base" material="printed"/>
+      <geom class="collision" mass="0.1348" mesh="base"/>
+      <body name="shoulder_pan_servo" pos="0 0.0352 0.04215" quat="0 1 0 0">
+        <geom class="visual" mesh="sts3215" material="servo" pos="0 0.0227 0"/>
+        <geom class="servo" pos="0 0.0227 0"/>
+        <body name="shoulder" pos="0 0.0352 -0.0187" quat="0.7071068 0.7071068 0 0">
+          <joint name="shoulder_pan" axis="0 1 0" range="-1.5708 1.5708"/>
+          <geom class="visual" mesh="shoulder" material="printed" pos="0 0.0187 -0.0175" quat="0.7071068 0 0 0.7071068"/>
+          <geom class="collision" mass="0.0308" mesh="shoulder" pos="0 0.0187 -0.0175" quat="0.7071068 0 0 0.7071068"/>
+          <body name="shoulder_lift_servo" pos="-0.00035 0.0147 -0.035" quat="0 0.7071068 0 -0.7071068">
+            <geom class="visual" mesh="sts3215" material="servo" pos="0 0.0227 -0.00035"/>
+            <geom class="servo" pos="0 0.0227 -0.00035"/>
+            <body name="upper_arm" pos="0 0.0352 -0.01905" quat="0 0.7071068 0 -0.7071068">
+              <joint name="shoulder_lift" axis="-1 0 0" range="-1.5708 1.5708"/>
+              <geom class="visual" mesh="upper_arm" material="printed" pos="-0.0187 -0.05 0" quat="0 -0.7071068 0.7071068 0"/>
+              <geom class="collision" mass="0.0455" mesh="upper_arm" pos="-0.0187 -0.05 0" quat="0 -0.7071068 0.7071068 0"/>
+              <body name="elbow_flex_servo" pos="-0.01905 -0.1 0.006" quat="0 1 0 0">
+                <geom class="visual" mesh="sts3215" material="servo" pos="0.00035 0 0.0227" quat="0.5 0.5 -0.5 -0.5"/>
+                <geom class="servo" pos="0.00035 0 0.0227" quat="0.5 0.5 -0.5 -0.5"/>
+                <body name="lower_arm" pos="0.01905 0 0.0352" quat="0 -1 0 0">
+                  <joint name="elbow_flex" axis="-1 0 0" range="-1.5708 1.5708"/>
+                  <geom class="visual" mesh="lower_arm" material="printed" pos="-0.0177 0 -0.05" quat="0.5 0.5 0.5 -0.5"/>
+                  <geom class="collision" mass="0.047" mesh="lower_arm" pos="-0.0177 0 -0.05" quat="0.5 0.5 0.5 -0.5"/>
+                  <body name="forearm_roll_servo" pos="-0.0539 0 -0.11" quat="0.7071068 0.7071068 0 0">
+                    <geom class="visual" mesh="sts3215" material="servo" pos="0.0227 -0.00035 0" quat="0.5 -0.5 -0.5 -0.5"/>
+                    <geom class="servo" pos="0.0227 -0.00035 0" quat="0.5 -0.5 -0.5 -0.5"/>
+                    <body name="forearm" pos="0.0352 -0.01905 0" quat="0.7071068 -0.7071068 0 0">
+                      <joint name="forearm_roll" axis="0 0 1" range="-2.26893 2.26893"/>
+                      <geom class="visual" mesh="forearm" material="printed" pos="0 0 -0.005" quat="0 0 -1 0"/>
+                      <geom class="collision" mass="0.0183" mesh="forearm" pos="0 0 -0.005" quat="0 0 -1 0"/>
+                      <body name="wrist_flex_servo" pos="0.00035 0 -0.01" quat="0 1 0 0">
+                        <geom class="visual" mesh="sts3215" material="servo" pos="-0.00035 0 0.0227" quat="0.5 0.5 0.5 0.5"/>
+                        <geom class="servo" pos="-0.00035 0 0.0227" quat="0.5 0.5 0.5 0.5"/>
+                        <body name="wrist" pos="-0.01905 0 0.0352" quat="0 -1 0 0">
+                          <joint name="wrist_flex" axis="1 0 0" range="-2.26893 2.26893"/>
+                          <geom class="visual" mesh="wrist" material="printed" pos="0.0187 0 -0.00875" quat="0.7071068 0.7071068 0 0"/>
+                          <geom class="collision" mass="0.0219" mesh="wrist" pos="0.0187 0 -0.00875" quat="0.7071068 0.7071068 0 0"/>
+                          <body name="wrist_roll_servo" pos="0.0539 0 -0.052" quat="0 -0.7071068 0 0.7071068">
+                            <geom class="visual" mesh="sts3215" material="servo" pos="0.00035 0 0.0227" quat="0.5 0.5 -0.5 -0.5"/>
+                            <geom class="servo" pos="0.00035 0 0.0227" quat="0.5 0.5 -0.5 -0.5"/>
+                            <body name="gripper" pos="0.01905 0 0.0352" quat="0 -0.7071068 0 0.7071068">
+                              <joint name="wrist_roll" axis="0 0 1" range="-2.00713 2.00713"/>
+                              <geom class="visual" mesh="gripper" material="printed" pos="0 0 -0.005" quat="0 -1 0 0"/>
+                              <geom class="collision" mass="0.0207" mesh="gripper" pos="0 0 -0.005" quat="0 -1 0 0"/>
+                              <!-- TCP (tool centre point): between the jaws, 15 mm behind the fingertips.
+                                   At the zero pose its axes are the base axes: x forward, y left, z up. -->
+                              <site name="tcp" pos="0 0 -0.0846" quat="-0.5 -0.5 -0.5 0.5" size="0.004" rgba="0.95 0.6 0.1 1" group="1"/>
+                              <body name="gripper_servo" pos="-0.016 0 -0.0065" quat="0.5 0.5 0.5 0.5">
+                                <geom class="visual" mesh="sts3215" material="servo" pos="0 -0.0125 0.0227" quat="0.5 0.5 0.5 0.5"/>
+                                <geom class="servo" pos="0 -0.0125 0.0227" quat="0.5 0.5 0.5 0.5"/>
+                                <body name="moving_jaw" pos="-0.0187 -0.0125 0.0352" quat="0.5 -0.5 -0.5 -0.5">
+                                  <joint name="gripper" axis="0 1 0" range="-1.5708 0.261799"/>
+                                  <geom class="visual" mesh="moving_jaw" material="printed" pos="0 0.0187 0" quat="0.7071067 -0.000366 -0.000366 0.7071067"/>
+                                  <geom class="collision" mass="0.0196" mesh="moving_jaw" pos="0 0.0187 0" quat="0.7071067 -0.000366 -0.000366 0.7071067"/>
+                                </body>
+                              </body>
+                              <body name="fixed_jaw" pos="-0.0225 0 0.00295" quat="0 0.7071068 0 -0.7071068">
+                                <geom class="visual" mesh="fixed_jaw" material="printed" pos="0.01645 0 0.0025" quat="0.5 -0.5 0.5 -0.5"/>
+                                <geom class="collision" mass="0.0191" mesh="fixed_jaw" pos="0.01645 0 0.0025" quat="0.5 -0.5 0.5 -0.5"/>
+                              </body>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <!-- torque in N m; servolab's servo model decides the torque, like the motor's firmware -->
+    <motor name="shoulder_pan" joint="shoulder_pan" class="so102"/>
+    <motor name="shoulder_lift" joint="shoulder_lift" class="so102"/>
+    <motor name="elbow_flex" joint="elbow_flex" class="so102"/>
+    <motor name="forearm_roll" joint="forearm_roll" class="so102"/>
+    <motor name="wrist_flex" joint="wrist_flex" class="so102"/>
+    <motor name="wrist_roll" joint="wrist_roll" class="so102"/>
+    <motor name="gripper" joint="gripper" class="so102"/>
+  </actuator>
+
+  <keyframe>
+    <key name="zero" qpos="0 0 0 0 0 0 0"/>
+  </keyframe>
+
+  <custom>
+    <numeric name="servo_id:shoulder_pan" data="1"/>
+    <numeric name="servo_id:shoulder_lift" data="2"/>
+    <numeric name="servo_id:elbow_flex" data="3"/>
+    <numeric name="servo_id:forearm_roll" data="4"/>
+    <numeric name="servo_id:wrist_flex" data="5"/>
+    <numeric name="servo_id:wrist_roll" data="6"/>
+    <numeric name="servo_id:gripper" data="7"/>
+  </custom>
+</mujoco>

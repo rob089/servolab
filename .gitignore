@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+
+# OS / editors
+.DS_Store
+.idea/
+
+# PlatformIO (firmware/)
+.pio/
+
+# MkDocs (mkdocs build)
+site/
+.cache/
